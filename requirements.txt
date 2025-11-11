@@ -4,5 +4,5 @@ httpx
 python-dotenv
 sqlalchemy
 pydantic
-gitlab
+python-gitlab
 
