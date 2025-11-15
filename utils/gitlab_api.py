@@ -27,6 +27,42 @@ def _require_env(name: str) -> str:
         raise ValueError(f"Environment variable {name} is not set")
     return value
 
+async def get_mr_diff(project_id, mr_iid):
+    """
+    Fetch the diff for a merge request from GitLab API.
+    
+    Endpoint: GET /projects/{project_id}/merge_requests/{mr_iid}/changes
+    """
+    try:
+        base_url = _require_env("BASE_URL")
+        token = _require_env("GITLAB_TOKEN")
+        
+        url = f"{base_url}/projects/{project_id}/merge_requests/{mr_iid}/changes"
+        headers = {"PRIVATE-TOKEN": token}
+        
+        logger.info(f"Fetching MR diff - Project: {project_id}, MR: {mr_iid}")
+        logger.info(f"URL: {url}")
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            r = await client.get(url, headers=headers)
+            
+            logger.info(f"MR diff GET response status: {r.status_code}")
+            
+            if r.status_code == 200:
+                data = r.json()
+                # GitLab returns changes with diff in the 'changes' array
+                changes = data.get("changes", [])
+                diff_text = "\n".join([change.get("diff", "") for change in changes])
+                logger.info(f"Fetched diff with {len(changes)} file changes, total length: {len(diff_text)}")
+                return diff_text
+            else:
+                logger.error(f"Failed to fetch MR diff. Status: {r.status_code}, Response: {r.text[:200]}")
+                return ""
+                
+    except Exception as e:
+        logger.error(f"Error fetching MR diff: {e}", exc_info=True)
+        return ""
+
 async def post_comment_to_mr(project_id, mr_iid, comment):
     """
     Post a comment to a GitLab merge request.
