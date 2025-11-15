@@ -35,6 +35,13 @@ API documentation:
 - Swagger UI: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
 
+## Deployment
+
+The application is deployed on Render and available at:
+- **Live URL**: https://agentops-2wff.onrender.com
+- **Health Check**: https://agentops-2wff.onrender.com/
+- **Webhook Endpoint**: https://agentops-2wff.onrender.com/webhook/gitlab
+
 ## Project Structure
 
 ```
