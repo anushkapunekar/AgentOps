@@ -3,6 +3,9 @@ from dotenv import load_dotenv, find_dotenv
 import os
 import logging
 from routes import webhook
+from routes import settings
+from fastapi.middleware.cors import CORSMiddleware
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -25,8 +28,25 @@ app = FastAPI(
     version="1.0.0"
 )
 
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "*"  # you can remove this in production
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 # Include routers
 app.include_router(webhook.router)
+app.include_router(settings.router)
+
 
 @app.get("/")
 def root():
