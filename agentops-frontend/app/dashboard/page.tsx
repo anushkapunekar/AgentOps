@@ -12,10 +12,10 @@ export default function DashboardPage() {
   async function enableWebhook(projectId: number) {
     try {
       const res = await api.post("/create-webhook", {
-        token: "YOUR_REAL_TOKEN",
+        token: "glpat-BC7jgIZhyeTTeNHid1GHUG86MQp1OmlncHkzCw.01.121ngjxmx",
         base_url: "https://gitlab.com",
         project_id: projectId,
-        webhook_url: "http://127.0.0.1:8000/webhook/gitlab"
+        webhook_url: "http://sad-grapes-judge.loca.lt/webhook/gitlab"
       });
 
       if (res.data.ok) {
