@@ -15,7 +15,7 @@ export default function DashboardPage() {
         token: "glpat-BC7jgIZhyeTTeNHid1GHUG86MQp1OmlncHkzCw.01.121ngjxmx",
         base_url: "https://gitlab.com",
         project_id: projectId,
-        webhook_url: "http://sad-grapes-judge.loca.lt/webhook/gitlab"
+        webhook_url: "https://agentops-2wff.onrender.com/webhook/gitlab"
       });
 
       if (res.data.ok) {
