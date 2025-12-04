@@ -104,7 +104,10 @@ def create_webhook(data: dict):
     # Minimum required payload for GitLab to accept the hook
     payload = {
         "url": webhook_url,
-        "merge_requests_events": True
+        "push_events":False,
+        "merge_requests_events": True,
+        "tag_push_events":False,
+        "enable_ssl_verification":False
     }
 
     resp = requests.post(url, headers=headers, json=payload)

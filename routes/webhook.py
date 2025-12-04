@@ -168,30 +168,22 @@ router = APIRouter()
 # -----------------------------
 @router.post("/webhook/gitlab")
 async def gitlab_webhook(request: Request):
-    """
-    TEMPORARY ultra-fast webhook handler to fix GitLab timeout.
-    This handler returns immediately with HTTP 200.
-    """
-    logger.info("=" * 80)
-    logger.info("Webhook hit — MINIMAL MODE")
-    logger.info("=" * 80)
-    print("Webhook hit — MINIMAL MODE")
+    """TEMPORARY ultra-fast webhook handler for debugging."""
+    logger.info("Webhook hit — minimal fast handler")
+    print("Webhook hit — minimal fast handler")
 
+    # Try reading JSON (safe)
     try:
         payload = await request.json()
         logger.info("Payload received (minimal)")
-        print("Payload preview:", str(payload)[:300])
+        print(str(payload)[:200])
     except Exception as e:
         logger.error(f"Could not parse payload: {e}")
 
-    # IMPORTANT:
-    # DO NOT:
-    # - Fetch diff
-    # - Parse MR data
-    # - Schedule background task
-    # - Trigger AI review
-    # - Log huge payloads
-    # Just respond fast to satisfy GitLab.
+    # DO NOT run background task
+    # DO NOT fetch diff
+    # DO NOT call AI
+    # Just immediately respond fast
 
     return {"status": "ok"}
 
