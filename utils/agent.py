@@ -8,33 +8,44 @@ from utils.gitlab_api import get_mr_diff, post_comment_to_mr
 
 logger = logging.getLogger(__name__)
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-
-if not GROQ_API_KEY:
-    logger.error("GROQ_API_KEY is missing! AI review cannot run.")
-
-client = Groq(api_key=GROQ_API_KEY)
-
 MIXTRAL_MODEL = "mixtral-8x7b-32768"
 DEEPSEEK_MODEL = "deepseek-coder-v2-lite-base"
 
 
+def get_groq_client():
+    """Lazy-load Groq client so Render env vars are available."""
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        logger.error("❌ GROQ_API_KEY is missing! AI review cannot run.")
+        return None
+    return Groq(api_key=api_key)
+
+
 def _groq_sync(model: str, prompt: str) -> str:
-    """Sync API call (Groq SDK is sync-only)."""
-    resp = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": "You are a professional code reviewer."},
-            {"role": "user", "content": prompt},
-        ],
-        temperature=0.2,
-        max_tokens=1200,
-    )
-    return resp.choices[0].message.content.strip()
+    """Sync API call (Groq SDK is sync-only). Uses lazy client."""
+    client = get_groq_client()
+    if not client:
+        return "GROQ_API_KEY missing — AI could not run."
+
+    try:
+        resp = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": "You are a professional code reviewer."},
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.2,
+            max_tokens=1200,
+        )
+        return resp.choices[0].message.content.strip()
+
+    except Exception as e:
+        logger.error(f"Groq API error: {e}")
+        return f"Groq API error: {e}"
 
 
 async def _groq(model: str, prompt: str) -> str:
-    """Async wrapper for sync Groq API."""
+    """Async wrapper around sync Groq call."""
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(None, _groq_sync, model, prompt)
 
@@ -42,6 +53,7 @@ async def _groq(model: str, prompt: str) -> str:
 async def review_merge_request(project_id, mr_iid, diff, source_branch="main"):
     logger.info(f"Running AI review for MR !{mr_iid}")
 
+    # Fetch diff if missing
     if not diff or len(diff) < 20:
         logger.info("Diff missing, fetching from GitLab API...")
         diff = await get_mr_diff(project_id, mr_iid)
@@ -50,7 +62,7 @@ async def review_merge_request(project_id, mr_iid, diff, source_branch="main"):
         await post_comment_to_mr(project_id, mr_iid, "⚠️ Could not retrieve diff.")
         return
 
-    truncated = diff[:15000]  # prevent prompt overflow
+    truncated = diff[:15000]
 
     summary_prompt = f"""
     You are analyzing a GitLab Merge Request diff.
@@ -80,17 +92,11 @@ async def review_merge_request(project_id, mr_iid, diff, source_branch="main"):
     - constructive tone  
     """
 
-    # Mixtral summary
-    try:
-        summary = await _groq(MIXTRAL_MODEL, summary_prompt)
-    except:
-        summary = "Could not generate summary due to AI backend error."
+    # Generate summary via Mixtral
+    summary = await _groq(MIXTRAL_MODEL, summary_prompt)
 
-    # DeepSeek detailed review
-    try:
-        detailed = await _groq(DEEPSEEK_MODEL, detailed_prompt)
-    except:
-        detailed = "Could not generate detailed review due to AI backend error."
+    # Generate detailed analysis via DeepSeek
+    detailed = await _groq(DEEPSEEK_MODEL, detailed_prompt)
 
     body = f"""
 ### 🤖 AgentOps AI Code Review
