@@ -63,3 +63,9 @@ def env_status():
         "ai_model": os.getenv("AI_MODEL", "not set"),
         "has_groq": bool(os.getenv("GROQ_API_KEY")),
     }
+
+print("--------------------------------------------------")
+print("DEBUG: CHECKING ENVIRONMENT VARIABLES ON RENDER")
+print("GROQ_API_KEY:", os.getenv("GROQ_API_KEY"))
+print("ALL ENV:", {k: v for k, v in os.environ.items()})
+print("--------------------------------------------------")
