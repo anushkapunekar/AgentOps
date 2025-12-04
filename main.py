@@ -6,21 +6,23 @@ from routes import webhook
 from routes import settings
 from fastapi.middleware.cors import CORSMiddleware
 
-
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load environment variables
-env_path = find_dotenv()
-if env_path:
-    load_dotenv(env_path, override=True)
-    logger.info(f"Loaded .env from: {env_path}")
+# Load .env ONLY in local development
+if os.getenv("RENDER") is None:
+    env_path = find_dotenv()
+    if env_path:
+        load_dotenv(env_path, override=True)
+        logger.info(f"Loaded local .env from: {env_path}")
+    else:
+        logger.info("No local .env found.")
 else:
-    # Fallback to explicit path
-    env_path = os.path.join(os.path.dirname(__file__), ".env")
-    load_dotenv(env_path, override=True)
-    logger.info(f"Loaded .env from: {env_path}")
+    logger.info("Running on Render – NOT loading .env")
+
+# Debug check
+print("DEBUG: GROQ_API_KEY =", os.getenv("GROQ_API_KEY"))
 
 app = FastAPI(
     title="AgentOps API",
@@ -31,7 +33,7 @@ app = FastAPI(
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "*"  # you can remove this in production
+    "*"
 ]
 
 app.add_middleware(
@@ -42,33 +44,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# Include routers
 app.include_router(webhook.router)
 app.include_router(settings.router)
 
-
 @app.get("/")
 def root():
-    """Root endpoint - health check."""
     return {"status": "running"}
 
 @app.get("/health")
 def health():
-    """Health check endpoint."""
     return {"status": "ok"}
 
 @app.get("/health/env")
 def env_status():
-    """Check environment variable status."""
-    base_url = os.getenv("BASE_URL")
-    token = os.getenv("GITLAB_TOKEN")
-    ai_model = os.getenv("AI_MODEL", "not set")
-    has_openai_key = bool(os.getenv("OPENAI_API_KEY"))
-    
     return {
-        "base_url": base_url,
-        "has_token": bool(token),
-        "ai_model": ai_model,
-        "has_openai_key": has_openai_key
+        "base_url": os.getenv("BASE_URL"),
+        "has_token": bool(os.getenv("GITLAB_TOKEN")),
+        "ai_model": os.getenv("AI_MODEL", "not set"),
+        "has_groq": bool(os.getenv("GROQ_API_KEY")),
     }
