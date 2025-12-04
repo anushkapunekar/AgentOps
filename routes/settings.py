@@ -9,16 +9,9 @@ class Settings(BaseModel):
     base_url: str
 
 @router.post("/save-settings")
-async def save_settings(payload: dict):
-    base_url = payload.get("base_url")
-    token = payload.get("token")
-    webhook_url = payload.get("webhook_url")
-
-    os.environ["BASE_URL"] = base_url
-    os.environ["GITLAB_TOKEN"] = token
-    os.environ["WEBHOOK_URL"] = webhook_url
-
-    return {"status": "saved"}
+async def save_settings(settings: Settings):
+    print("💾 SETTINGS RECEIVED:", settings.dict())
+    return {"status": "ok", "message": "Settings saved."}
 
 
 @router.post("/validate-token")
