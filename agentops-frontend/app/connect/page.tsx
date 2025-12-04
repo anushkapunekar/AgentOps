@@ -1,75 +1,50 @@
 "use client";
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
+import { useState } from "react";
 
 export default function ConnectPage() {
+  const [gitlabUrl, setGitlabUrl] = useState("");
   const [token, setToken] = useState("");
-  const [baseUrl, setBaseUrl] = useState("https://gitlab.com");
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   async function handleConnect() {
-    setLoading(true);
-    setSuccess(null);
-    setError(null);
-
     try {
-      const res = await api.post("/validate-token", {
+      await api.post("/save-settings", {
+        gitlab_url: gitlabUrl,
         token,
-        base_url: baseUrl,
       });
 
-      const data = res.data;
-      const displayName = data.name || data.username || "GitLab user";
-
-      setSuccess(`Connected successfully as ${displayName}.`);
-      // later we can also call /save-settings here
-    } catch (err: any) {
-      const message =
-        err?.response?.data?.detail || "Failed to validate token. Please check your details.";
-      setError(message);
-    } finally {
-      setLoading(false);
+      window.location.href = "/dashboard";
+    } catch {
+      alert("Connection failed");
     }
   }
 
   return (
-    <div className="max-w-md mx-auto mt-20 space-y-6">
-      <h1 className="text-3xl font-bold">Connect GitLab</h1>
-      <p className="text-sm text-muted-foreground">
-        Enter your GitLab Personal Access Token and instance URL to connect AgentOps.
-      </p>
+    <motion.div
+      className="max-w-lg mx-auto pt-32 space-y-6"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+    >
+      <h1 className="text-4xl font-semibold">Connect GitLab</h1>
 
-      <div className="space-y-3">
-        <div>
-          <label className="text-sm font-medium">GitLab Base URL</label>
-          <Input
-            placeholder="https://gitlab.com"
-            value={baseUrl}
-            onChange={(e) => setBaseUrl(e.target.value)}
-          />
-        </div>
+      <Input
+        placeholder="Enter GitLab URL…"
+        value={gitlabUrl}
+        onChange={(e) => setGitlabUrl(e.target.value)}
+      />
 
-        <div>
-          <label className="text-sm font-medium">GitLab Personal Access Token</label>
-          <Input
-            placeholder="glpat-..."
-            value={token}
-            onChange={(e) => setToken(e.target.value)}
-          />
-        </div>
-      </div>
+      <Input
+        placeholder="Enter Personal Access Token…"
+        value={token}
+        onChange={(e) => setToken(e.target.value)}
+      />
 
-      <Button onClick={handleConnect} disabled={loading || !token || !baseUrl}>
-        {loading ? "Connecting..." : "Connect"}
-      </Button>
-
-      {success && <p className="text-sm text-green-600 mt-2">{success}</p>}
-      {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
-    </div>
+      <Button onClick={handleConnect}>Connect</Button>
+    </motion.div>
   );
 }
