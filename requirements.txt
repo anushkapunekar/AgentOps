@@ -1,9 +1,0 @@
-fastapi
-uvicorn
-httpx
-python-dotenv
-sqlalchemy
-pydantic
-python-gitlab
-requests
-groq==0.6.0

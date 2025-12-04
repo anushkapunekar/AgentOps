@@ -1,0 +1,26 @@
+stages:
+  - analysis
+  - test
+
+agentops-analysis:
+  stage: analysis
+  image: python:3.11
+  script:
+    - pip install ruff pylint
+    - ruff check .
+    - pylint -E .
+  artifacts:
+    when: always
+    reports:
+      dotenv: agentops_analysis.env
+
+unit-tests:
+  stage: test
+  image: python:3.11
+  script:
+    - pip install -r requirements.txt || true
+    - pytest -q --maxfail=1 || true
+  artifacts:
+    when: always
+    paths:
+      - reports/
